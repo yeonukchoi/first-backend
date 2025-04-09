@@ -21,6 +21,15 @@ app.post('/posts', (req, res) => {
     res.status(201).json(newPost);
 });
 
+//게시글 수정 기능
+app.put('/posts/:id', (req, res) => {
+    const post = posts.find(p => p.id === parseInt(req.params.id));
+    if(!post) return res.status(404).json(post);
+    post.title = req.body.title;
+    post.content = req.body.content;
+    res.json(post);
+});
+
 
 
 app.listen(3000, () => {
