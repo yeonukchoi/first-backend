@@ -24,10 +24,19 @@ app.post('/posts', (req, res) => {
 //게시글 수정 기능
 app.put('/posts/:id', (req, res) => {
     const post = posts.find(p => p.id === parseInt(req.params.id));
-    if(!post) return res.status(404).json(post);
+    if(!post) return res.status(404).json({ message: '게시글 없음' });
     post.title = req.body.title;
     post.content = req.body.content;
     res.json(post);
+});
+
+//게시글 삭제 기능
+app.delete('/posts/:id', (req, res) => {
+    const postIndex = posts.findIndex(p => p.id == parseInt(req.params.id));
+    if(postIndex === -1) return res.status(404).json({message: '게시글 없음'});
+
+    posts.slice(postIndex, 1);
+    res.json({message: '삭제 완료'});
 });
 
 
