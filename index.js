@@ -1,18 +1,34 @@
 const express = require('express');
+const mongoose = require('mongoose');
+
 const app = express();
+const post = require('./models/post');
+
 
 const posts = [];
 let id = 1;
 
 app.use(express.json());
 
+//데이터 베이스 연결
+mongoose.connect('mongodb://localost:27017/boardApp', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+}).then(() => {
+    console.log('MongoDB 연결 성공');
+}).catch((err) => {
+    console.error('MongoDB 연결 실패', err);
+});
+
 app.get('/', (req, res) => {
     res.send('게시판 실행중');
 });
+
 //게시판 목록 조회
 app.get('/posts', (req, res) => {
     res.json(posts);
 });
+
 //게시판 글 작성
 app.post('/posts', (req, res) => {
     const {title, content} = req.body;
