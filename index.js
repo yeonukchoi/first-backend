@@ -2,16 +2,12 @@ const express = require('express');
 const mongoose = require('mongoose');
 
 const app = express();
-const post = require('./models/post');
-
-
-const posts = [];
-let id = 1;
+const Post = require('./models/post');
 
 app.use(express.json());
 
 //데이터 베이스 연결
-mongoose.connect('mongodb://localost:27017/boardApp', {
+mongoose.connect('mongodb://localhost:27017/boardApp', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 }).then(() => {
@@ -20,39 +16,77 @@ mongoose.connect('mongodb://localost:27017/boardApp', {
     console.error('MongoDB 연결 실패', err);
 });
 
-app.get('/', (req, res) => {
-    res.send('게시판 실행중');
-});
-
 //게시판 목록 조회
-app.get('/posts', (req, res) => {
-    res.json(posts);
+app.get('/posts', async (req, res) => {
+    try {
+        const posts = await Post.find();
+        res.json(posts);
+        //console.log(posts);
+    }
+    catch (err) {
+        console.error('Error fetching posts:', err);
+        res.status(500).json({ message: '게시글 목록 조회 실패', error: err.message });
+    }
 });
 
 //게시판 글 작성
-app.post('/posts', (req, res) => {
+app.post('/posts', async (req, res) => {
     const {title, content} = req.body;
-    const newPost = {id: id++, title, content, createdAt: new Date()};
-    posts.push(newPost);
-    res.status(201).json(newPost);
+
+    try {
+        const newPost = await Post.create({ 
+            title,
+            content,
+            createdAt: new Date(),
+        });
+        //console.log(newPost);
+        res.status(201).json(newPost);
+    }
+
+    catch (err) {
+        res.status(500).json({ message: '저장 실패', error: err});
+    }
 });
 
 //게시글 수정 기능
-app.put('/posts/:id', (req, res) => {
-    const post = posts.find(p => p.id === parseInt(req.params.id));
-    if(!post) return res.status(404).json({ message: '게시글 없음' });
-    post.title = req.body.title;
-    post.content = req.body.content;
-    res.json(post);
+app.put('/posts/:id', async (req, res) => {
+    const {id} = req.params;
+    const {title, content} = req.body;
+
+    try {
+        const updatedPost = await Post.findByIdAndUpdate(
+            id,
+            {title, content},
+            {new: true}
+        );
+
+        if (!updatedPost) {
+            return res.status(404).json({ message: '게시글을 찾을 수 없습니다.'});
+        }
+
+        res.json(updatedPost);
+    }
+   catch (err) {
+    res.status(500).json({ message: '게시글 수정 실패', error: err});
+   }
 });
 
 //게시글 삭제 기능
-app.delete('/posts/:id', (req, res) => {
-    const postIndex = posts.findIndex(p => p.id == parseInt(req.params.id));
-    if(postIndex === -1) return res.status(404).json({message: '게시글 없음'});
+app.delete('/posts/:id', async (req, res) => {
+    const {id} = req.params;
 
-    posts.slice(postIndex, 1);
-    res.json({message: '삭제 완료'});
+    try {
+        const deletePost = await Post.findByIdAndDelete(id);
+
+        if(!deletePost) {
+            return res.status(404).json({ message: '게시글을 찾을 수 없습니다.'});
+        }
+
+        res.json({ message: '삭제 완료', deletePost});
+    }
+    catch (err) {
+        res.status(500).json({ message: '삭제 실패', error: err});
+    }
 });
 
 
